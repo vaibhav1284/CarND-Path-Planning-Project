@@ -148,11 +148,11 @@ int main() {
                 } else if ( car_lane - lane == -1 ) {
                   // Car left
                   //too_close_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
-				  too_close_left |= too_close_left_right_conditions
+				  too_close_left |= too_close_left_right_conditions;
                 } else if ( car_lane - lane == 1 ) {
                   // Car right
                   //too_close_right |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
-				  too_close_right |= too_close_left_right_conditions
+				  too_close_right |= too_close_left_right_conditions;
                 }
             }
 
