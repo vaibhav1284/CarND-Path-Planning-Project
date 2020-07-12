@@ -14,6 +14,24 @@ using namespace std;
 // for convenience
 using json = nlohmann::json;
 
+
+//Check Lane ID
+int CheckLaneID(int d)
+{
+	int car_lane = -1;
+	
+	// Checking for Car Lane ID for cars in sensor fusion list
+	if ( d > 0 && d < 4 ) {
+	  car_lane = 0;
+	} else if ( d > 4 && d < 8 ) {
+	  car_lane = 1;
+	} else if ( d > 8 && d < 12 ) {
+	  car_lane = 2;
+	}
+	
+	return car_lane;
+}
+
 int main() {
   uWS::Hub h;
 
@@ -87,7 +105,8 @@ int main() {
           	// Previous path data given to the Planner
           	auto previous_path_x = j[1]["previous_path_x"];
           	auto previous_path_y = j[1]["previous_path_y"];
-          	// Previous path's end s and d values
+          	
+			// Previous path's end s and d values
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
 
@@ -95,47 +114,52 @@ int main() {
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
             int prev_size = previous_path_x.size();
-
-            if (prev_size > 2) {   // #change# : Value changed from 0 to 2.
+            if (prev_size > 2) { 
               car_s = end_path_s;
             }
-
-            // Prediction : Analysing other cars positions.
-            bool car_ahead = false;
-            bool car_left = false;
-            bool car_righ = false;
+			
+            bool too_close = false,too_close_left = false,too_close_right = false;
+            //bool too_close_left = false;
+            //bool too_close_right = false;
+			
             for ( int i = 0; i < sensor_fusion.size(); i++ ) {
                 float d = sensor_fusion[i][6];
-                int car_lane = -1;
-                // is it on the same lane we are
-                if ( d > 0 && d < 4 ) {
+                int car_lane = -1;            
+				
+                // Checking for valid Car Lane ID
+				if (car_lane < 0) {
+                  continue;
+                }
+                
+				/*	
+				// Checking for Car Lane ID for cars in sensor fusion list
+				if ( d > 0 && d < 4 ) {
                   car_lane = 0;
                 } else if ( d > 4 && d < 8 ) {
                   car_lane = 1;
                 } else if ( d > 8 && d < 12 ) {
                   car_lane = 2;
-                }
-                if (car_lane < 0) {
-                  continue;
-                }
-                // Find car speed.
+                }*/
+				
+				car_lane = CheckLaneID(d);
+				
+				
                 double vx = sensor_fusion[i][3];
                 double vy = sensor_fusion[i][4];
                 double check_speed = sqrt(vx*vx + vy*vy);
                 double check_car_s = sensor_fusion[i][5];
-                // Estimate car s position after executing previous trajectory.
                 check_car_s += ((double)prev_size*0.02*check_speed);
 
 				// Checking other car lanes with ego vehicle
                 if ( car_lane == lane ) {
                   // Car in our lane.
-                  car_ahead |= check_car_s > car_s && check_car_s - car_s < 30;
+                  too_close |= check_car_s > car_s && check_car_s - car_s < 30;
                 } else if ( car_lane - lane == -1 ) {
                   // Car left
-                  car_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+                  too_close_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
                 } else if ( car_lane - lane == 1 ) {
                   // Car right
-                  car_righ |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+                  too_close_right |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
                 }
             }
 
@@ -143,11 +167,11 @@ int main() {
             double speed_diff = 0;
             const double MAX_SPEED = 49.5;
             const double MAX_ACC = .224;
-            if ( car_ahead ) { // Car ahead
-              if ( !car_left && lane > 0 ) {
+            if ( too_close ) { // Car ahead
+              if ( !too_close_left && lane > 0 ) {
                 // if there is no car left and there is a left lane.
                 lane--; // Change lane left.
-              } else if ( !car_righ && lane != 2 ){
+              } else if ( !too_close_right && lane != 2 ){
                 // if there is no car right and there is a right lane.
                 lane++; // Change lane right.
               } else {
@@ -155,7 +179,7 @@ int main() {
               }
             } else {
               if ( lane != 1 ) { // if we are not on the center lane.
-                if ( ( lane == 0 && !car_righ ) || ( lane == 2 && !car_left ) ) {
+                if ( ( lane == 0 && !too_close_right ) || ( lane == 2 && !too_close_left ) ) {
                   lane = 1; // Back to center.
                 }
               }
