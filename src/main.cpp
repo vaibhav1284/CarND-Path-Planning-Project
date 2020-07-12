@@ -126,7 +126,7 @@ int main() {
 				
 				// Checking other car lane ids
 				car_lane = CheckLaneID(d);		
-				
+
                 // Checking for valid Car Lane ID
 				if (car_lane < 0) {
                   continue;
@@ -143,15 +143,10 @@ int main() {
 				
 				// Checking other car lanes with ego vehicle
                 if ( car_lane == lane ) {
-                  // Car in our lane.
                   too_close |= check_car_s > car_s && check_car_s - car_s < 30;
                 } else if ( car_lane - lane == -1 ) {
-                  // Car left
-                  //too_close_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
 				  too_close_left |= too_close_left_right_conditions;
                 } else if ( car_lane - lane == 1 ) {
-                  // Car right
-                  //too_close_right |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
 				  too_close_right |= too_close_left_right_conditions;
                 }
             }
