@@ -53,8 +53,30 @@ The following images describes how the ego vehicle changed lane in different sce
 * Following 
 <img src="images/following.JPG" width="250" alt="Image1" /> 
 
-### Lane Changes : Scenarios
+### Path Planning : Trajectories
 
+The path trajectory is created by taking into account the previous waypoint so as to smoothen the path. Previous 2 waypoints are used to determine vehicle orientation(angle) and to estimate the forward path. The below code is used to make a path in forward direction. The current vehicle position is referenced as "0".
+
+```
+// Setting up target points in the future.
+vector<double> next_wp0 = getXY(car_s + 30, 2 + 4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+vector<double> next_wp1 = getXY(car_s + 60, 2 + 4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+vector<double> next_wp2 = getXY(car_s + 90, 2 + 4*lane, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+```
+
+The spline implementation is used to determine the y values for a given x values. 
+
+```
+// Create the spline.
+tk::spline s;
+s.set_points(ptsx, ptsy);
+
+// Calculate distance y position on 30 m ahead.
+double target_x = 30.0;
+double target_y = s(target_x);
+double target_dist = sqrt(target_x*target_x + target_y*target_y);
+
+```
 
 
 
