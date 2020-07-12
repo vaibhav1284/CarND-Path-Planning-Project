@@ -119,55 +119,48 @@ int main() {
             }
 			
             bool too_close = false,too_close_left = false,too_close_right = false;
-            //bool too_close_left = false;
-            //bool too_close_right = false;
 			
             for ( int i = 0; i < sensor_fusion.size(); i++ ) {
                 float d = sensor_fusion[i][6];
                 int car_lane = -1;            
 				
+				// Checking other car lane ids
+				car_lane = CheckLaneID(d);		
+				
                 // Checking for valid Car Lane ID
 				if (car_lane < 0) {
                   continue;
                 }
-                
-				/*	
-				// Checking for Car Lane ID for cars in sensor fusion list
-				if ( d > 0 && d < 4 ) {
-                  car_lane = 0;
-                } else if ( d > 4 && d < 8 ) {
-                  car_lane = 1;
-                } else if ( d > 8 && d < 12 ) {
-                  car_lane = 2;
-                }*/
-				
-				car_lane = CheckLaneID(d);
-				
-				
+                				
                 double vx = sensor_fusion[i][3];
                 double vy = sensor_fusion[i][4];
                 double check_speed = sqrt(vx*vx + vy*vy);
                 double check_car_s = sensor_fusion[i][5];
                 check_car_s += ((double)prev_size*0.02*check_speed);
 
+				// Checking if other car is in range of 30 meters (forward and backward)
+				bool too_close_left_right_conditions = car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+				
 				// Checking other car lanes with ego vehicle
                 if ( car_lane == lane ) {
                   // Car in our lane.
                   too_close |= check_car_s > car_s && check_car_s - car_s < 30;
                 } else if ( car_lane - lane == -1 ) {
                   // Car left
-                  too_close_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+                  //too_close_left |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+				  too_close_left |= too_close_left_right_conditions
                 } else if ( car_lane - lane == 1 ) {
                   // Car right
-                  too_close_right |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+                  //too_close_right |= car_s - 30 < check_car_s && car_s + 30 > check_car_s;
+				  too_close_right |= too_close_left_right_conditions
                 }
             }
 
-            // Behavior : Let's see what to do.
             double speed_diff = 0;
             const double MAX_SPEED = 49.5;
             const double MAX_ACC = .224;
-            if ( too_close ) { // Car ahead
+
+            if ( too_close ) {
               if ( !too_close_left && lane > 0 ) {
                 // if there is no car left and there is a left lane.
                 lane--; // Change lane left.
@@ -178,9 +171,9 @@ int main() {
                 speed_diff -= MAX_ACC;
               }
             } else {
-              if ( lane != 1 ) { // if we are not on the center lane.
+              if ( lane != 1 ) { 
                 if ( ( lane == 0 && !too_close_right ) || ( lane == 2 && !too_close_left ) ) {
-                  lane = 1; // Back to center.
+                  lane = 1; 
                 }
               }
               if ( ref_vel < MAX_SPEED ) {
@@ -194,10 +187,8 @@ int main() {
             double ref_x = car_x;
             double ref_y = car_y;
             double ref_yaw = deg2rad(car_yaw);
-
-            // Do I have have previous points
+			
             if ( prev_size < 2 ) {
-                // There are not too many...
                 double prev_car_x = car_x - cos(car_yaw);
                 double prev_car_y = car_y - sin(car_yaw);
 
@@ -207,7 +198,7 @@ int main() {
                 ptsy.push_back(prev_car_y);
                 ptsy.push_back(car_y);
             } else {
-                // Use the last two points.
+				
                 ref_x = previous_path_x[prev_size - 1];
                 ref_y = previous_path_y[prev_size - 1];
 
