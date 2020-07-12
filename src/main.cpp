@@ -1,6 +1,6 @@
+#include <uWS/uWS.h>
 #include <fstream>
 #include <math.h>
-#include <uWS/uWS.h>
 #include <iostream>
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
